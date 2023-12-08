@@ -1,0 +1,406 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Models\PilotSkills;
+use App\Models\PilotAddress;
+use App\Models\PilotProfile;
+use App\Models\PilotVideos;
+use Illuminate\Http\Request;
+use App\Services\SkillService;
+use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Collection;
+use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Log;
+
+class FeaturePilotController extends Controller
+{
+    /**
+     * featured Pilot Profile.
+     *
+     * If everything is okay, you'll get a `200` OK response with data.
+     *
+     * Otherwise, the request will fail with a `404` error, and a response featured pilot not found!
+     *
+     *
+     * <aside class="info">This api will used in <br> 1. Blog Listing <br> 2. Blog Detail <br>3.Category Page</aside>
+     *
+     * @param \Illuminate\Http\Request  $request
+     * @param $id required
+     * @return \Illuminate\Http\Response
+     *
+     * @response  {
+            "statusCode": 200,
+            "message": "featured Profile fetch successfully",
+            "data": [
+                {
+                    "pilot_profile_id": 691,
+                    "user_id": 184,
+                    "name": "Devin Ullrich",
+                    "title": "itaque",
+                    "slug": "omnis-ad-sunt-consequatur-dolorum-aut-quia-quis",
+                    "short_description": "<p>magnam<\/p>",
+                    "image": "http:\/\/local.drone\/pilotseed.png",
+                    "skills": "Videography,Video Editing"
+                },
+                {
+                    "pilot_profile_id": 692,
+                    "user_id": 185,
+                    "name": "Maximus Keeling",
+                    "title": "eveniet",
+                    "slug": "eos-quae-iure-necessitatibus-excepturi-delectus-alias-aut",
+                    "short_description": "dolorem",
+                    "image": "http:\/\/local.drone\/pilotseed.png",
+                    "skills": "Videography"
+                },
+              ]
+
+              }
+
+     *
+     * @response status=404 {
+            "statusCode": 404,
+            "message": "featured Profile not found!",
+            "data": []
+        }
+
+     */
+    public function index(Request $request)
+    {
+        $profiles = PilotProfile::with('userSkill')
+            ->latest()
+            ->featured()
+            ->active()
+            ->take(4)
+            ->get();
+
+        if ($profiles->isEmpty()) {
+            return response()->json([
+                'statusCode' => 404,
+                'message' => 'featured Profile not found!',
+                'data' => []
+            ])->setStatusCode(404);
+        }
+
+        $data = [];
+        foreach ($profiles as $key => $value) {
+            $data[] = [
+                'pilot_profile_id' => $value->id,
+                'user_id' => $value->user_id,
+                'name' => $value->users->name,
+                'title' => $value->title,
+                'slug' => $value->slug,
+                'short_description' => $value->short_description,
+                'image' => asset($value->image),
+                'skills' => (new SkillService())->pilot($value->id),
+                'is_insured' => $value->is_insured
+            ];
+        }
+
+        return response()->json([
+            'statusCode' => Response::HTTP_OK,
+            'message' => 'featured Profile fetch successfully',
+            'data' => $data
+        ])->setStatusCode(Response::HTTP_OK);
+    }
+
+    /**
+     * Home Featured pilot Profile.
+     *
+     * If everything is okay, you'll get a `200` OK response with data.
+     *
+     * Otherwise, the request will fail with a `404` error, and a response recent featured blog post not found!
+     *
+     *
+     * @param \Illuminate\Http\Request  $request
+     * @param $id required
+     * @return \Illuminate\Http\Response
+     *
+     * @response  {
+           "statusCode": 200,
+           "message": "featured Profile fetch successfully",
+           "data": [
+               {
+                   "pilot_profile_id": 691,
+                   "user_id": 184,
+                   "name": "Devin Ullrich",
+                   "title": "itaque",
+                   "slug": "omnis-ad-sunt-consequatur-dolorum-aut-quia-quis",
+                   "short_description": "<p>magnam<\/p>",
+                   "image": "http:\/\/local.drone\/pilotseed.png",
+                   "skills": "Videography,Video Editing",
+                   "no_of_jobs": 10,
+                   "hourly_rate": 10
+               }
+           ]
+       }
+     *
+     * @response status=404 {
+           "statusCode": 404,
+           "message": "featured Profile not found!",
+           "data": []
+       }
+
+     */
+    public function homeFeatured(Request $request)
+    {
+        $profiles = PilotProfile::with(['userSkill', 'hourlyRate'])
+            ->homeFeatured()
+            ->active()
+            ->take(1)
+            ->latest('home_featured_updated_at')
+            ->get();
+
+        // Log::debug("profiles ".print_r($profiles,true));
+
+        if ($profiles->isEmpty()) {
+            return response()->json([
+                'statusCode' => 404,
+                'message' => 'featured Profile not found!',
+                'data' => []
+            ])->setStatusCode(404);
+        }
+
+        $data = [];
+        foreach ($profiles as $key => $value) {
+			$video=PilotVideos::where(['pilot_profile_id' => $value->id, 'position' => 'Main'])
+                        ->select('id as pilot_video_id', 'type as video_type', 'video as video_url', 'video_key', 'position')
+                        ->first();
+            $data[] = [
+                'pilot_profile_id' => $value->id,
+                'user_id' => $value->user_id,
+                'name' => $value->users->name,
+                'title' => $value->title,
+                'slug' => $value->slug,
+                'short_description' => $value->short_description,
+                'image' => asset($value->image),
+                'skills' => (new SkillService())->pilot($value->id),
+                'no_of_jobs' => 0,
+                'hourly_rate' => $value->hourlyRate->rate ?? '0',
+                'is_insured' => $value->is_insured,
+				'pilot_video' => @$video->video_url ?? ''
+            ];
+        }
+
+        return response()->json([
+            'statusCode' => Response::HTTP_OK,
+            'message' => 'featured Profile fetch successfully',
+            'data' => $data
+        ])->setStatusCode(Response::HTTP_OK);
+    }
+
+    /**
+     * category pilot feature.
+     *
+     * If everything is okay, you'll get a `200` OK response with data.
+     *
+     * Otherwise, the request will fail with a `404` error, and a response recent featured blog post not found!
+     *
+     *
+     * @param \Illuminate\Http\Request  $request
+     * @param $id required
+     * @return \Illuminate\Http\Response
+     *
+     * @response  {
+           "statusCode": 200,
+           "message": "featured Profile fetch successfully",
+           "data": [
+               {
+                   "pilot_profile_id": 691,
+                   "user_id": 184,
+                   "name": "Devin Ullrich",
+                   "title": "itaque",
+                   "slug": "omnis-ad-sunt-consequatur-dolorum-aut-quia-quis",
+                   "short_description": "<p>magnam<\/p>",
+                   "image": "http:\/\/local.drone\/pilotseed.png",
+                   "skills": "Videography,Video Editing",
+                   "no_of_jobs": 10,
+                   "hourly_rate": 10
+               }
+           ]
+       }
+     *
+     * @response status=404 {
+           "statusCode": 404,
+           "message": "featured Profile not found!",
+           "data": []
+       }
+
+     */
+
+    public function categoryFeature(Request $request)
+    {
+        $profiles = PilotProfile::query()
+            ->active()
+            ->subscribed()
+            ->orderBy('is_featured', 'desc')
+            ->orderBy('id', 'desc');
+
+        if ($request->has('q') && $request->input('q') != '') {
+            if ($json_exists = $this->isJSON($request->input('q'))) {
+                $decode_string = json_decode($request->input('q'));
+                $city = $decode_string->city ?? '';
+            } else {
+                $city = $request->input('q');
+            }
+
+
+            $pilot_profile_id = PilotAddress::query()
+                ->where('city', 'like', '%' . $city . '%')
+                ->orWhere('address_line1', 'like', '%' . $city . '%')
+                ->orWhere('address_line2', 'like', '%' . $city . '%')
+                ->orWhereHas('state', function ($query) use ($city) {
+                    $query->where('name', 'like', '%' . $city . '%');
+                })
+                // ->join('pilot_profile', 'pilot_address.pilot_profile_id', '=', 'pilot_profile.id')
+                ->select('pilot_profile_id')
+                ->distinct('pilot_profile_id')
+                ->get()
+                ->pluck('pilot_profile_id')
+                ->toArray();
+
+            // Log::debug("pilotIds ".print_r($pilot_profile_id,true));
+
+            [$latitude,$longitude]=$this->findLatitudeAndLongitude($city);
+            //return $latitude;
+
+            $pilot_profile_id2 = array();
+            if(!empty($latitude) && !empty($longitude)){
+                $radius_q = '(6371 * acos( cos( radians('.$latitude.') ) * cos( radians( latitude ) ) * cos( radians( longitude ) - radians('.$longitude.') ) + sin( radians('.$latitude.') ) * sin( radians( latitude ) ) ) )  < 150';
+                // To search by miles instead of kilometers, replace 6371 with 3959.
+                $pilot_profile_id2 = \DB::table('pilot_address')
+                    ->join('pilot_profile', 'pilot_address.pilot_profile_id', '=', 'pilot_profile.id')
+                    /*->whereRaw(
+                        'SQRT(POW(69.1 * (latitude - ?), 2) + POW(69.1 * (? - longitude) * COS(latitude / 57.3), 2)) < 804',
+                        [$latitude,$longitude]
+                    )*/
+                    ->whereRaw($radius_q)
+                    ->select('pilot_profile_id')
+                    ->distinct('pilot_profile_id')
+                    ->get()
+                    ->pluck('pilot_profile_id')
+                    ->toArray();
+            }
+
+            $pilot_profile_ids = array_unique (array_merge ($pilot_profile_id, $pilot_profile_id2));
+
+            $profiles->whereIn('id', $pilot_profile_ids);
+        }
+
+        if ($request->has('skill') && $request->input('skill') != '') {
+            $skilled_profile = \DB::table('pilot_skills')
+                ->where('skill_id', $request->input('skill'))
+                ->get()
+                ->pluck('pilot_profile_id');
+            $profiles = $profiles->whereIn('id', $skilled_profile);
+        }
+        $profile_count = $profiles->count();
+
+        if ($request->has('page')) {
+            $page = $request->input('page');
+            $page = $page - 1;
+            $offset = $page * 10;
+            $profiles = $profiles->offset($offset);
+        }
+        $profiles = $profiles->take(10)->latest()->get();
+
+
+
+        if ($profiles->isEmpty()) {
+            return response()->json([
+                'statusCode' => 404,
+                'message' => 'profiles not found!',
+                'data' => []
+            ])->setStatusCode(404);
+        }
+
+
+        $master = [];
+        foreach ($profiles as $key => $value) {
+            $data = $value;
+            $data['name'] = $value->users->name;
+            $data['description'] = \Str::limit($value->description, 150);
+            $data['skills'] = (new SkillService())->pilot($value->id);
+            unset($data['users']);
+
+            $master[] = $data;
+        }
+
+        return response()->json([
+            'statusCode' => Response::HTTP_OK,
+            'message' => 'profile fetch successfully',
+            'profile_count' => $profile_count,
+            'data' => $master,
+        ]);
+    }
+
+
+    public function isJSON($string)
+    {
+        return is_string($string) && is_array(json_decode($string, true)) ? true : false;
+    }
+
+
+    public function findLatitudeAndLongitude($city)
+    {
+        $apiKey  = 'AIzaSyCLfVtYfTOVAcjsMpVDVltEu7SJIP007Uw';
+        $address = urlencode($city);
+        $url     = "https://maps.googleapis.com/maps/api/geocode/json?address=" . $address . "&key=" . $apiKey;
+        $resp    = json_decode(file_get_contents($url), true);
+
+        // Latitude and Longitude (PHP 7 syntax)
+        $lat    = $resp['results'][0]['geometry']['location']['lat'] ?? '';
+        $long   = $resp['results'][0]['geometry']['location']['lng'] ?? '';
+
+        return  [$lat, $long];
+    }
+
+    /**
+     * Pilot sitemap
+     *
+     * If everything is okay, you'll get a `200` OK response with data.
+     *
+     * Otherwise, the request will fail with a `404` error, and a response recent featured blog post not found!
+     *
+
+
+     */
+
+    public function sitemap(Request $request)
+    {
+        $profiles = PilotProfile::query()
+            ->select('id', 'is_featured', 'slug', 'updated_at', 'title', 'user_id')
+            ->active()
+            ->orderBy('is_featured', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+
+
+
+        if ($profiles->isEmpty()) {
+            return response()->json([
+                'statusCode' => 404,
+                'message' => 'profiles not found!',
+                'data' => []
+            ])->setStatusCode(404);
+        }
+
+
+        $master = [];
+        foreach ($profiles as $key => $value) {
+            $master[] = [
+                'name' => $value->users->name,
+                'title' => $value->title,
+                'slug' => $value->slug,
+                'lastModified' => $value->updated_at->format('Y-m-d')
+            ];
+        }
+
+        return response()->json([
+            'statusCode' => Response::HTTP_OK,
+            'message' => 'profile fetch successfully',
+            'data' => $master,
+        ]);
+    }
+}

@@ -1,0 +1,372 @@
+<?php
+namespace App\Http\Controllers\Api\V1;
+
+use App\Models\Plan;
+use App\Models\User;
+use App\Mail\EmailVerify;
+use App\Mail\WelcomeUser;
+use App\Mail\WelcomePilot;
+use App\Mail\WelcomeCompany;
+use Illuminate\Support\Str;
+use App\Mail\VerifyUserMail;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Response;
+
+class RegistrationController extends Controller
+{
+
+    /**
+     * Pilot Registration.
+     *
+     * If everything is okay, you'll get a `200` OK response with data.
+     *
+     * Otherwise, the validation request will fail with a `400` error, and a response based on failed attribute
+     *
+     *
+     *
+     * @bodyParam email string required The email of the user. Example: example@domain.com
+     * @bodyParam password string required The password of the user. Example: secret
+     * @param \Illuminate\Http\Request  $request
+     * @param $id required
+     * @return \Illuminate\Http\Response
+     *
+     * @response status=200  {
+            "statusCode": 200,
+            "message": "Registration successfully completed",
+            "data": {
+                "id": 67,
+                "first_name": "Test65",
+                "last_name": "Last name",
+                "email": "d67@gmail.com",
+                "slug": "test65-last-name",
+                "is_agreed": 1,
+                "is_email_subscribed": 0,
+                "plans": [
+                    {
+                        "plan_id": "price_1JTKEdBbrKa9p7qI48PLqu3p",
+                        "plan_name": "daily_plan",
+                        "plan_amount": "2"
+                    },
+                    {
+                        "plan_id": "price_1JTKIqBbrKa9p7qIPYhDg2ce",
+                        "plan_name": "weekly_plan_1",
+                        "plan_amount": "9"
+                    }
+                ],
+                "roles": [
+                    {
+                        "id": 3,
+                        "title": "Pilot"
+                    }
+                ]
+            },
+            "access_token": "43|tsFnIrz61XBVEZvKdrTULZGJwaJlg6KOHYZoWp8L"
+        }
+     *
+     * @response status=401 {
+            "statusCode": 400,
+            "message": "Required Field missing",
+            "data": {
+                "email": [
+                    "The email has already been taken."
+                ]
+            }
+        }
+
+    */
+    public function pilot(Request $request)
+    {
+        $validation = Validator::make($request->all(), [
+            'first_name' => ['required','string'],
+            'email'    => ['required','unique:users'],
+            'password' => ['required','min:6'],
+            'mobile' => ['nullable'],
+            'is_agreed'=>['required','boolean'],
+            'is_email_subscribed'=>['required','boolean'],
+            'hear_about_us'=>['required']
+        ], [
+            'first_name.required'=>'First name is required',
+            'email.required'=>'Email name is required',
+            'email.unique'=>'Email already exists',
+        ]);
+
+
+        if ($validation->fails()) {
+            return response()->json([
+                'statusCode' => Response::HTTP_BAD_REQUEST,
+                'message' => $validation->messages()->first(),
+                'data' => $validation->messages(),
+            ])->setStatusCode(Response::HTTP_BAD_REQUEST);
+        }
+
+        $data=$request->all();
+        $data['yes_i_agree']=$request->is_agreed;
+        $data['yes_send_email']=$request->is_email_subscribed;
+        $data['registration_source']="Frontend";
+        $data['slug']=Str::slug($request->first_name.' '.$request->last_name);
+        $data['hear_about_us']=@User::HEAR_ABOUT_US_TEXT[@strtolower($request->hear_about_us)];
+
+        $user=User::create($data);
+        
+        $user->roles()->sync(3);
+
+        $stripeCustomer = $user->createAsStripeCustomer();
+        $getUser = User::with(['roles:id,title'])
+                    ->where('email', $request->email)
+                     ->select('id', 'first_name', 'last_name', 'email', 'mobile', 'slug', 'yes_i_agree as is_agreed', 'yes_send_email as is_email_subscribed')
+                     ->first();
+
+        $getUser['plans']=Plan::STRIP_All_PLAN_WITH_PRE_DEFINED_KEY;
+
+
+        $authToken = $getUser->createToken('auth-token')->plainTextToken;
+        
+        try {
+            Mail::to($request->email)
+                ->later(now()->addHour(5), new WelcomePilot($getUser));
+            Mail::to($request->email)->send(new EmailVerify($getUser));
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+        }
+
+        return response()->json([
+                         'statusCode'=>Response::HTTP_OK,
+                         'message' => 'Registration successfully completed',
+                         'data'=>$getUser,
+                         'access_token' => $authToken,
+                 ])->setStatusCode(Response::HTTP_OK);
+    }
+
+
+    /**
+     *
+     * User Registration.
+     *
+     * If everything is okay, you'll get a `200` OK response with data.
+     *
+     * Otherwise, the validation request will fail with a `400` error, and a response based on failed attribute
+     *
+     *
+     *
+     * @bodyParam email string required The email of the user. Example: example@domain.com
+     * @bodyParam password string required The password of the user. Example: secret
+     * @param \Illuminate\Http\Request  $request
+     * @param $id required
+     * @return \Illuminate\Http\Response
+     *
+     * @response status=200  {
+            "statusCode": 200,
+            "message": "Registration successfully completed",
+            "data": {
+                "id": 13,
+                "first_name": "md asdasdas",
+                "last_name": "saif sas",
+                "email": "s@oudddtsslook.com",
+                "slug": "md-asdasdas-saif-sas",
+                "is_agreed": "0",
+                "is_email_subscribed": "0",
+                "roles": [
+                    {
+                        "id": 3,
+                        "title": "pilot"
+                    }
+                ]
+            },
+            "access_token": "43|tsFnIrz61XBVEZvKdrTULZGJwaJlg6KOHYZoWp8L"
+        }
+     *
+     * @response status=401 {
+            "statusCode": 400,
+            "message": "Required Field missing",
+            "data": {
+                "email": [
+                    "The email has already been taken."
+                ]
+            }
+        }
+
+    */
+    public function user(Request $request)
+    {
+        $validation = Validator::make($request->all(), [
+            'first_name' => ['required','string'],
+            'email'    => ['required','unique:users'],
+            'password' => ['required','min:6'],
+            'is_agreed'=>['required','boolean'],
+            'is_email_subscribed'=>['required','boolean'],
+            'hear_about_us'=>['required']
+        ], [
+            'first_name.required'=>'First name is required',
+            'email.required'=>'Email name is required',
+            'email.unique'=>'Email already exists',
+        ]);
+       
+        if ($validation->fails()) {
+            return response()->json([
+                'statusCode' => Response::HTTP_BAD_REQUEST,
+                'message' =>$validation->messages()->first(),
+                'data' => $validation->messages(),
+            ])->setStatusCode(Response::HTTP_BAD_REQUEST);
+        }
+
+        $data=$request->all();
+        $data['yes_i_agree']=$request->is_agreed;
+        $data['yes_send_email']=$request->is_email_subscribed;
+        $data['registration_source']="Frontend";
+        $data['slug']=Str::slug($request->first_name.' '.$request->last_name);
+        $data['hear_about_us']=@User::HEAR_ABOUT_US_TEXT[@strtolower($request->hear_about_us)];
+
+        $user=User::create($data);
+        $user->roles()->sync(2);
+
+        $getUser = User::with(['roles:id,title'])
+                        ->where('email', $request->email)
+                        ->select('id', 'first_name', 'last_name', 'email', 'slug', 'yes_i_agree as is_agreed', 'yes_send_email as is_email_subscribed')
+                         ->first();
+
+
+        $authToken = $getUser->createToken('auth-token')->plainTextToken;
+
+        try {
+            Mail::to($request->email)
+                ->later(now()->addHour(5), new WelcomeUser($getUser));
+
+            Mail::to($request->email)->send(new EmailVerify($getUser));
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+        }
+      
+        return response()->json([
+                         'statusCode'=>Response::HTTP_OK,
+                         'message' => 'User Registration successfully completed',
+                         'data'=>$getUser,
+                         'access_token' => $authToken,
+                 ])->setStatusCode(Response::HTTP_OK);
+    }
+
+    public function eventUser(Request $request)
+    {
+        $validation = Validator::make($request->all(), [
+            'first_name' => ['required','string'],
+            'email'    => ['required','unique:users'],
+            'password' => ['required','min:6'],
+            'is_agreed'=>['required','boolean'],
+            'is_email_subscribed'=>['required','boolean'],
+            'hear_about_us'=>['required']
+        ], [
+            'first_name.required'=>'First name is required',
+            'email.required'=>'Email name is required',
+            'email.unique'=>'Email already exists',
+        ]);
+       
+        if ($validation->fails()) {
+            return response()->json([
+                'statusCode' => Response::HTTP_BAD_REQUEST,
+                'message' =>$validation->messages()->first(),
+                'data' => $validation->messages(),
+            ])->setStatusCode(Response::HTTP_BAD_REQUEST);
+        }
+
+        $data=$request->all();
+        $data['yes_i_agree']=$request->is_agreed;
+        $data['yes_send_email']=$request->is_email_subscribed;
+        $data['registration_source']="Frontend";
+        $data['slug']=Str::slug($request->first_name.' '.$request->last_name);
+        $data['hear_about_us']=@User::HEAR_ABOUT_US_TEXT[@strtolower($request->hear_about_us)];
+
+        $user=User::create($data);
+        $user->roles()->sync(5);
+
+        $getUser = User::with(['roles:id,title'])
+                        ->where('email', $request->email)
+                        ->select('id', 'first_name', 'last_name', 'email', 'slug', 'yes_i_agree as is_agreed', 'yes_send_email as is_email_subscribed')
+                         ->first();
+
+
+        $authToken = $getUser->createToken('auth-token')->plainTextToken;
+
+        try {
+            Mail::to($request->email)
+                ->later(now()->addHour(5), new WelcomeUser($getUser));
+
+            Mail::to($request->email)->send(new EmailVerify($getUser));
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+        }
+      
+        return response()->json([
+                         'statusCode'=>Response::HTTP_OK,
+                         'message' => 'User Registration successfully completed',
+                         'data'=>$getUser,
+                         'access_token' => $authToken,
+                 ])->setStatusCode(Response::HTTP_OK);
+    }
+
+    
+
+    public function company(Request $request)
+    {
+        $validation = Validator::make($request->all(), [
+            'first_name' => ['required','string'],
+            'email'    => ['required','unique:users'],
+            'password' => ['required','min:6'],
+            'mobile' => ['nullable'],
+            'is_agreed'=>['required','boolean'],
+            'is_email_subscribed'=>['required','boolean'],
+            'hear_about_us'=>['required']
+        ], [
+            'first_name.required'=>'First name is required',
+            'email.required'=>'Email name is required',
+            'email.unique'=>'Email already exists',
+        ]);
+
+
+        if ($validation->fails()) {
+            return response()->json([
+                'statusCode' => Response::HTTP_BAD_REQUEST,
+                'message' => $validation->messages()->first(),
+                'data' => $validation->messages(),
+            ])->setStatusCode(Response::HTTP_BAD_REQUEST);
+        }
+
+        $data=$request->all();
+        $data['yes_i_agree']=$request->is_agreed;
+        $data['yes_send_email']=$request->is_email_subscribed;
+        $data['registration_source']="Frontend";
+        $data['slug']=Str::slug($request->first_name.' '.$request->last_name);
+        $data['hear_about_us']=@User::HEAR_ABOUT_US_TEXT[@strtolower($request->hear_about_us)];
+
+        $user=User::create($data);
+        
+        $user->roles()->sync(4);
+
+        $stripeCustomer = $user->createAsStripeCustomer();
+        $getUser = User::with(['roles:id,title'])
+                    ->where('email', $request->email)
+                    ->select('id', 'first_name', 'last_name', 'email', 'mobile', 'slug', 'yes_i_agree as is_agreed', 'yes_send_email as is_email_subscribed')
+                    ->first();
+
+        $getUser['plans']=Plan::STRIP_COMPANY_PLAN_WITH_PRE_DEFINED_KEY; 
+
+
+        $authToken = $getUser->createToken('auth-token')->plainTextToken;
+        
+        try {
+            Mail::to($request->email)
+                ->later(now()->addHour(5), new WelcomeCompany($getUser));
+            Mail::to($request->email)->send(new EmailVerify($getUser));
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+        }
+
+        return response()->json([
+                         'statusCode'=>Response::HTTP_OK,
+                         'message' => 'Registration successfully completed',
+                         'data'=>$getUser,
+                         'access_token' => $authToken,
+                 ])->setStatusCode(Response::HTTP_OK);
+    }
+}
