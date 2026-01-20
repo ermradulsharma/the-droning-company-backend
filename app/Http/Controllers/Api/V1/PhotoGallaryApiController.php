@@ -57,53 +57,51 @@ class PhotoGallaryApiController extends Controller
     public function index()
     {
         $gallary = PhotoGallery::query()
-                    ->select('id', 'image', 'image_text', 'image_link')
-                    ->where('status', '1')
-                    ->orderBy('id', 'DESC')
-                    ->get();
+            ->select('id', 'image', 'image_text', 'image_link')
+            ->where('status', '1')
+            ->orderBy('id', 'DESC')
+            ->get();
 
-    
-        
+
+
         if ($gallary->isEmpty()) {
             return response()->json([
-                'statusCode' =>404,
+                'statusCode' => 404,
                 'message' => 'Photo Gallery not found!',
-                'data' =>[]
+                'data' => []
             ])->setStatusCode(404);
         }
 
         return response()->json([
-             'statusCode'=>Response::HTTP_OK,
-             'message' => 'Photo Gallery fetch successfully',
-             'data'=>$gallary,
+            'statusCode' => Response::HTTP_OK,
+            'message' => 'Photo Gallery fetch successfully',
+            'data' => $gallary,
         ])->setStatusCode(Response::HTTP_OK);
     }
 
 
     public function new()
     {
-        session()->forget('gallary_session_value');
         $gallary = PhotoGallery::query()
-                    ->select('id', 'image', 'image_text', 'image_link')
-                    ->where('status', '1')
-                    ->orderBy('id', 'DESC')
-                    ->chunk(3, function ($q) {
-                        session()->push('gallary_session_value', $q);
-                    });
-       
-        
-        if (!session()->has('gallary_session_value')) {
+            ->select('id', 'image', 'image_text', 'image_link')
+            ->where('status', '1')
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->chunk(3)
+            ->values();
+
+        if ($gallary->isEmpty()) {
             return response()->json([
-                'statusCode' =>404,
+                'statusCode' => 404,
                 'message' => 'Photo Gallery not found!',
-                'data' =>[]
+                'data' => []
             ])->setStatusCode(404);
         }
 
         return response()->json([
-             'statusCode'=>Response::HTTP_OK,
-             'message' => 'Photo Gallery fetch successfully',
-             'data'=>session()->get('gallary_session_value'),
+            'statusCode' => Response::HTTP_OK,
+            'message' => 'Photo Gallery fetch successfully',
+            'data' => $gallary,
         ])->setStatusCode(Response::HTTP_OK);
     }
 }

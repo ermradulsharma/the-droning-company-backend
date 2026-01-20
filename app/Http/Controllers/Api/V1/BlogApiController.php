@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use Gate;
+use Illuminate\Support\Facades\Gate;
 use App\Models\Blog;
 use App\Models\PilotJob;
 use App\Models\BlogCategory;
@@ -15,7 +15,7 @@ use App\Http\Resources\Admin\BlogResource;
 use Illuminate\Database\Eloquent\Collection;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Cache;
+use Illuminate\Support\Facades\Cache;
 
 class BlogApiController extends Controller
 {
@@ -286,18 +286,20 @@ class BlogApiController extends Controller
             ])->setStatusCode(404);
         }
 
-        session()->forget('blog_session_value');
-        $blogs = Blog::query()
+        $relatedBlogs = Blog::query()
             ->whereNotIn('id', [$blog->id])
             ->select('id', 'title', 'image', 'excerpt', 'description', 'slug')
             ->latest('id')
-            ->chunk(3, fn ($q) => session()->push('blog_session_value', $q));
+            ->get()
+            ->chunk(3)
+            ->take(4)
+            ->values();
 
         return response()->json([
             'statusCode' => Response::HTTP_OK,
             'message' => 'blog post detail fetch successfully',
             'data' => $blog,
-            'relatedBlogs' => array_slice(session()->get('blog_session_value'), 0, 4),
+            'relatedBlogs' => $relatedBlogs,
         ]);
     }
 
@@ -647,11 +649,11 @@ class BlogApiController extends Controller
         $skip = (isset($request->skip) && $request->skip != 'undefined') ? $request->skip : 1;
         $seconds = 3600;
 
-        $category_ids = Cache::remember('category_ids_'.@$categories[0], $seconds, function () use($categories) {
+        $category_ids = Cache::remember('category_ids_' . @$categories[0], $seconds, function () use ($categories) {
             return BlogCategory::whereIn('title', $categories)->pluck('id');
         });
 
-        $posts = Cache::remember('blog_categories_'.@$category_ids[0].'_'.$skip.'_'.$limit, $seconds, function () use($category_ids, $skip, $limit) {
+        $posts = Cache::remember('blog_categories_' . @$category_ids[0] . '_' . $skip . '_' . $limit, $seconds, function () use ($category_ids, $skip, $limit) {
             return Blog::whereHas('blog_categories', function ($q) use ($category_ids) {
                 $q->whereIn('blog_category_id', $category_ids);
             })->latest('created_at')->skip($skip)->take($limit)->get();
