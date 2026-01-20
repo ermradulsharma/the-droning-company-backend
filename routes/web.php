@@ -5,66 +5,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-/*Route::get('/mapupdate', function () {
-    $addressLists = PilotAddress::join('pilot_profile', 'pilot_profile.id', '=', 'pilot_address.pilot_profile_id')
-        ->select('pilot_address.*')
-        ->get();
 
-
-    foreach ($addressLists as $key => $value) {
-        $newGeo = PilotAddress::find($value->id);
-
-        [$latitude, $longitude] = $newGeo->getLatitudeAndLongitude();
-
-        $newGeo->latitude = $latitude;
-        $newGeo->longitude = $longitude;
-        $newGeo->save();
-    }
-    return "all done";
-});
-
-
-Route::get('/jobLocationMapUpdate', function () {
-    $addressLists = JobLocation::join('pilot_jobs', 'pilot_jobs.id', '=', 'job_locations.pilot_job_id')
-        ->where('pilot_jobs.status', '=', 2)
-        ->select('job_locations.*')
-        ->get();
-
-
-
-
-    foreach ($addressLists as $key => $value) {
-        $newGeo = JobLocation::find($value->id);
-
-        [$latitude, $longitude] = (new CommonService())->findLatitudeAndLongitude($value->city);
-
-        $newGeo->latitude = $latitude;
-        $newGeo->longitude = $longitude;
-        $newGeo->save();
-    }
-    return "all done";
-});
-
-Route::get('/sub-test', function (Request $request) {
-    $user = \App\Models\User::where('id', 65)->first();
-
-    $invoices = $user->invoices();
-
-    dd($invoices->toArray(), $user->findInvoice('in_1JV84fBbrKa9p7qI0lFfOWSS')->toArray());
-    return $user->downloadInvoice('in_1JV84fBbrKa9p7qI0lFfOWSS', [], 'my-invoice');
-});
-
-
-Route::get('/mailtest', function () {
-    $job = PilotJob::find(1607);
-    $user = \App\Models\User::where('id', 65)->first();
-
-
-    //return new \App\Mail\SubscriptionPaymentConfirmation($user, 'in_1JV84fBbrKa9p7qI0lFfOWSS');
-    //return \Illuminate\Support\Facades\Mail::to('md.saif@outlook.com')->send(new \App\Mail\JobPostToAdmin($job));
-
-    return \Illuminate\Support\Facades\Mail::to('md.saif@outlook.com')->send(new \App\Mail\BrowserTest());
-});*/
 
 Route::redirect('/', '/login');
 Route::get('/home', function () {
@@ -76,8 +17,6 @@ Route::get('/home', function () {
 });
 
 Route::any('contact-us', [HomeController::class, 'contactForm'])->name('contact-us');
-
-
 Route::any('award-voting', 'HomeController@awardVoter')->name('award.voting');
 Route::any('award-voting/{voter}', 'HomeController@awardVoting')->name('award.voting.poll');
 Route::any('award-voting/success/{voter}', 'HomeController@awardVotingSuccess')->name('award.voting.success');
@@ -166,7 +105,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     //job
     Route::get('job-status-update/{status_id}/{job_id}', 'JobController@jobStatusUpdate');
     // Route::get('jobs/show/{id}', 'JobController@show');
-    Route::get('jobs/show/{id}', 'JobController@show');
+
     Route::put('pilot-jobs/update/{id}', 'JobController@update');
     Route::resource('pilot-jobs', 'JobController');
 
