@@ -1,61 +1,108 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# The Droning Company - Backend
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
-</p>
+Backend API and Administrative Dashboard for The Droning Company, built with Laravel 8.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Framework:** [Laravel 8](https://laravel.com/)
+- **PHP Version:** ^7.3 | ^8.0
+- **Database:** MySQL / MariaDB
+- **Key Packages:**
+    - `laravel/cashier`: Stripe integration for subscriptions and payments.
+    - `spatie/laravel-medialibrary`: Advanced media management.
+    - `livewire/livewire`: Dynamic interfaces for the admin panel.
+    - `yajra/laravel-datatables-oracle`: Powering data-heavy tables.
+    - `laravel/sanctum`: API token authentication.
+    - `laravel/telescope`: Debugging and monitoring.
+    - `plesk/ext-laravel-integration`: Optimized for Plesk hosting.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **User Management:** Pilot and Client profiles, role-based access control.
+- **Subscription System:** Powered by Laravel Cashier (Stripe).
+- **Project/Job Management:** Pilots can find and apply for drone jobs.
+- **Media Management:** Gallery for pilots to showcase their work (images/videos).
+- **Content Management:** Blogs, FAQs, and dynamic pages.
+- **Administrative Tools:** Full-featured dashboard for managing the ecosystem.
 
-## Learning Laravel
+## Getting Started
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Prerequisites
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP ^7.3 or ^8.0
+- Composer
+- MySQL/MariaDB
+- Node.js & NPM
 
-## Laravel Sponsors
+### Installation
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+1. **Clone the repository:**
 
-### Premium Partners
+    ```bash
+    git clone <repository-url>
+    cd the-droning-company-backend
+    ```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[OP.GG](https://op.gg)**
+2. **Install PHP dependencies:**
 
-## Contributing
+    ```bash
+    composer install
+    ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+3. **Install Node dependencies:**
 
-## Code of Conduct
+    ```bash
+    npm install
+    ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+4. **Environment Setup:**
 
-## Security Vulnerabilities
+    ```bash
+    cp .env.example .env
+    php artisan key:generate
+    ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+    _Configure your database and Stripe credentials in the `.env` file._
+
+5. **Run Migrations & Seeders:**
+
+    ```bash
+    php artisan migrate --seed
+    ```
+
+6. **Storage Link:**
+
+    ```bash
+    php artisan storage:link
+    ```
+
+7. **Compile Assets:**
+
+    ```bash
+    npm run dev
+    ```
+
+8. **Start the server:**
+    ```bash
+    php artisan serve
+    ```
+
+## Testing
+
+Run the test suite using:
+
+```bash
+php artisan test
+```
+
+## Documentation
+
+API documentation can be generated/viewed using [Scribe](https://scribe.knuckles.wtf/):
+
+```bash
+php artisan scribe:generate
+```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is proprietary and confidential.
