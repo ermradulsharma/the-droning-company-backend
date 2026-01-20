@@ -15,7 +15,7 @@ class CreateSubscriptionsTable extends Migration
     {
         Schema::disableForeignKeyConstraints();
 
-        Schema::create('subscriptions', function (Blueprint $table) {
+        Schema::create('user_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->foreignId('plan_id')->constrained();
@@ -37,6 +37,6 @@ class CreateSubscriptionsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('subscriptions');
+        Schema::dropIfExists('user_subscriptions');
     }
 }

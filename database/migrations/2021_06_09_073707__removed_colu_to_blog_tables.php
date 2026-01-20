@@ -13,7 +13,9 @@ class RemovedColuToBlogTables extends Migration
      */
     public function up()
     {
-        \DB::statement("ALTER TABLE blogs DROP FOREIGN KEY blog_category_fk_3609475 ; ");
+        Schema::table('blogs', function (Blueprint $table) {
+            $table->dropForeign('blog_category_fk_3609475');
+        });
     }
 
     /**

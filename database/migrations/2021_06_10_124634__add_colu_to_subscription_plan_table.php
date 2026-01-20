@@ -28,7 +28,7 @@ class AddColuToSubscriptionPlanTable extends Migration
      */
     public function down()
     {
-        Schema::table('subscription_plan', function (Blueprint $table) {
+        Schema::table('subscription_payment_histories', function (Blueprint $table) {
             //
         });
     }

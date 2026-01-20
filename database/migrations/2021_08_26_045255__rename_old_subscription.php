@@ -13,6 +13,6 @@ class RenameOldSubscription extends Migration
      */
     public function up()
     {
-        Schema::rename('subscriptions', 'old_subscriptions');
+        // Schema::rename('subscriptions', 'old_subscriptions');
     }
 }

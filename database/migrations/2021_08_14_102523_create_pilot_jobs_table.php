@@ -27,7 +27,11 @@ class CreatePilotJobsTable extends Migration
             $table->timestamps();
         });
 
-        \DB::statement("ALTER TABLE pilot_jobs AUTO_INCREMENT =1000;");
+        if (\DB::getDriverName() === 'mysql') {
+            \DB::statement("ALTER TABLE pilot_jobs AUTO_INCREMENT =1000;");
+        } elseif (\DB::getDriverName() === 'pgsql') {
+            \DB::statement("ALTER SEQUENCE pilot_jobs_id_seq RESTART WITH 1000;");
+        }
     }
 
     /**

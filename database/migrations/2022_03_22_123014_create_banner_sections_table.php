@@ -22,5 +22,8 @@ class CreateBannerSectionsTable extends Migration
         });
     }
 
-   
+    public function down()
+    {
+        Schema::dropIfExists('banner_sections');
+    }
 }

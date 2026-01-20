@@ -17,7 +17,7 @@ class CreateSubscriptionPaymentHistoriesTable extends Migration
 
         Schema::create('subscription_payment_histories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('subscription_id')->constrained();
+            $table->foreignId('subscription_id')->constrained('user_subscriptions');
             $table->foreignId('plan_id')->constrained();
             $table->decimal('amount', 10, 2)->nullable();
             $table->date('payment_date')->nullable();

@@ -11,6 +11,8 @@ class Subscription extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'user_subscriptions';
+
     /**
      * The attributes that are mass assignable.
      *

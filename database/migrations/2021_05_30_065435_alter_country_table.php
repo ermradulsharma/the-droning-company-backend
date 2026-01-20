@@ -14,8 +14,9 @@ class AlterCountryTable extends Migration
     public function up()
     {
         //
-            DB::statement("ALTER TABLE country MODIFY COLUMN iso2 varchar(255) AFTER name");
-
+        if (\DB::getDriverName() === 'mysql') {
+            \DB::statement("ALTER TABLE country MODIFY COLUMN iso2 varchar(255) AFTER name");
+        }
     }
 
     /**

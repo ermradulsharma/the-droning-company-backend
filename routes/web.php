@@ -191,7 +191,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     // banner route
     Route::resource('ads', 'BannerController');
     Route::resource('favel-footnote-boxes', 'FavelFootnoteController')->only([
-        'index', 'edit', 'update'
+        'index',
+        'edit',
+        'update'
     ]);
 
     Route::resource('favel-footnote-boxes.content', 'FavelFootnoteContentController');
@@ -247,7 +249,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('company', 'CompanyProfileController');
     Route::resource('services', 'ServiceController');
     Route::resource('company-galleries', 'CompanyGalleryController');
-    Route::delete('pilot-galleries/destroy', 'CompanyGalleryController@massDestroy')->name('company-galleries.massDestroy');
+    Route::delete('company-galleries/destroy', 'CompanyGalleryController@massDestroy')->name('company-galleries.massDestroy');
     Route::resource('company-videos', 'CompanyVideoController');
 
     // EVENTS

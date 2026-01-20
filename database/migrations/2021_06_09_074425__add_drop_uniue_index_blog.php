@@ -13,9 +13,11 @@ class AddDropUniueIndexBlog extends Migration
      */
     public function up()
     {
-        Schema::table('blogs', function (Blueprint $table) {
-            $table->dropIndex('blog_category_fk_3609475');
-        });
+        if (\DB::getDriverName() === 'mysql') {
+            Schema::table('blogs', function (Blueprint $table) {
+                $table->dropIndex('blog_category_fk_3609475');
+            });
+        }
     }
 
     /**
